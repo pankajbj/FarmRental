@@ -1,0 +1,73 @@
+1. System Architecture & Project Setup (The Farm Domain)
+Act as a Principal Enterprise Architect specializing in AgTech. I am building a Farm Rental Platform that handles land leases, farm equipment rentals, and agritourism bookings.
+
+Provide a complete system architecture blueprint and directory structure for a multi-repo project using:
+1. Java Spring Boot (v3.x) Microservices:
+   - User/Farmer Service (Profiles for Landlords, Tenants, Aggregators)
+   - FarmListing Service (Handles acreage, crop records, soil profiles, PostgreSQL/PostGIS)
+   - Booking/Lease Service (Handles complex time periods: daily agritourism vs. seasonal crop leasing)
+   - Search/Discovery Service (Elasticsearch for filtering by acreage, water sources, soil type)
+2. Frontend (React.js + Tailwind CSS + Vite)
+3. Admin/Moderation Panel (For verification of land deeds, soil reports, and agricultural licenses)
+
+Outline the directory layouts, API Gateway paths, and Kafka event definitions for asynchronous messaging (e.g., FARM_LEASED, MACHINERY_RESERVED).
+
+
+2. Backend Prompts (Java Spring Boot Microservices)
+
+In my Spring Boot 3.x project using Java 17 and Spring Data JPA, generate the boilerplate and core logic for a 'FarmListing' microservice.
+Requirements:
+1. Entity: 'FarmListing' with fields: id, title, description, pricePerMonth, pricePerSeason, acreage (double), totalArableLand (double), waterSource (enum: BOREWELL, CANAL, RAINFALL_DEPENDENT), electricityPhases (int), soilType (enum: BLACK_COTTON, ALLUVIAL, RED, SANDY), hasFencing (boolean), status (PENDING, ACTIVE, LEASED).
+2. Location Data: Use Hibernate Spatial / PostGIS to represent the location as a 'Point' (latitude/longitude) and the overall farm boundary as a 'Polygon' (GeoJSON format representation).
+3. Repository: Create a repository with a custom native PostGIS query to find all ACTIVE farms whose boundary Polygons intersect with a given user coordinate or fall within a specific search radius.
+4. Controller: Create clean REST endpoints for creating a farm listing and fetching listings by geospatial bounds. Include validation annotations.
+
+
+Prompt B: Seasonal Lease Calculator Logic
+
+Write a Java Service class `FarmLeaseCalculatorService` that calculates complex lease prices based on agricultural variables.
+Requirements:
+1. Accept input parameters: basePricePerAcre, totalAcreage, leaseDurationMonths, cropSeason (enum: KHARIF, RABI, ZAID, YEAR_ROUND), and requested Equipment (List of Machinery IDs).
+2. Logic rules: 
+   - Apply a 10% discount to the base rate if the lease duration spans more than 12 months.
+   - Add a premium of 15% to the base rate if the lease is strictly requested during high-demand crop seasons (KHARIF/RABI).
+   - Dynamically look up the daily/monthly rates of the selected equipment items and aggregate them into the total lease amount.
+3. Return a cleanly structured `LeaseQuoteDTO` detailing the price breakdown, deposit amount (fixed 3 months base rate), processing fees, and final grand total. Implement custom exception handling for invalid lease periods.
+
+
+
+3. Frontend Prompts (React.js Client Application)
+
+Prompt A: Agricultural Filter & Interactive Search Bar
+
+Create a highly performant React.js functional component called `FarmFilterSidebar` using Tailwind CSS for styling.
+Requirements:
+1. State Management: Manage local state for farm-specific filters including:
+   - Size/Acreage Range (Minimum to Maximum slider, e.g., 5 to 500+ acres)
+   - Water Availability (Checkboxes for Borewell, River/Canal access, Rain-fed)
+   - Land Suitability (Dropdown/Tags for Organic Certified, Grazing Livestock, Greenhouses, Cash Crops)
+   - Budget Range (Slider tailored to monthly or seasonal rates)
+2. UI Layout: A modern, collapsable sidebar design optimized for a grid layout showing search results on the right. Use clear agricultural iconography placeholders (like tractor, water drops, soil icons).
+3. Optimization: Implement a 400ms debounce when updating the filters before triggering the parent component's `onApplyFilters` callback to limit excessive API calls.
+
+Prompt B: Farm Boundary Polyline Map View
+
+Create a React component `FarmBoundaryMap` using React-Mapbox-GL or Google Maps API.
+Requirements:
+1. Accept a prop called `farmData` which contains a center coordinate (latitude, longitude) and an array of coordinates representing the land boundary polygon `geometry: { type: "Polygon", coordinates: [...] }`.
+2. On component mount, center the map on the farm's location and draw a stylized, semi-transparent green overlay polygon outlining the exact perimeter of the farm land.
+3. Place a custom Marker pin at the primary entrance/farmhouse location. When clicked, display a popup showing the Farm Title, Acreage, and a button to "Request Site Visit."
+4. Handle map load states and add controls for zooming and switching to a satellite view (essential for inspecting farm vegetation from the air).
+
+4. Admin & Verification Panel Prompts
+Prompt A: Land Deed & Document Verification Dashboard
+
+Create a comprehensive React admin table dashboard called `LandVerificationPanel` using Tailwind CSS. 
+Requirements:
+1. Fetch data from an endpoint `/api/admin/verifications/pending` showing a list of farm listings awaiting legal and environmental clearance.
+2. Columns to display: Vendor/Farmer Name, Farm Title, Government Land Survey Number, Document Links (Land Deed PDF, Soil Quality Report PDF), Submission Date.
+3. UI Element: When clicking a row, expand it inline or open a Modal showing a side-by-side preview window: the left side displays the metadata and links, the right side renders an embedded PDF viewer or document placeholder.
+4. Action Items: Provide an approval form section with fields: "Assigned Surveyor Name", "Verification Notes", and three main buttons: "Approve Listing" (Green), "Reject / Fraud Flag" (Red), and "Request Re-upload" (Yellow). Handle the state updates cleanly and display success toasts.
+
+
+

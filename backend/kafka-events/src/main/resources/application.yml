@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: kafka-events
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: farm-rental-group
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
